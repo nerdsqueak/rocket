@@ -1,0 +1,93 @@
+"""an example of using animate() and clock scheduling to move actoters around. 
+there are 2 actors in this example each with a different movement strategy.
+
+the block
+--------
+the block moves in a loop around the screen
+
+the bloack moves in a loop around the screen
+we schedule the move_block funcation to be called every 2 seconds using 
+ clock.schedule_interval.
+ the next position of the block is given by calling next() on a "cycle"
+ object, returned by itertols.cycle(). this will cycle through the block
+ we use animate() to move the block.
+
+ the ship
+ ------------
+
+ the ship moves in a random dance in the middle of the screen. the ship flips back and forth between a rotation phase and movement phase
+
+ * next_ship_target(): pick a new target location for the ship at random, and animate roatting the ship to aim at it.
+ when the ratation animation is complete, we will calle move_ship()
+ * move_ship(): move the ship to its target. when the move animation is complete we will call the next_ship_target().
+
+ """
+
+import pgzrun
+import random
+import itertools
+
+WIDTH = 400
+HEIGHT = 400
+
+#define 4 sets of cords for the block to move between
+BLOCK_POSITIONS =[
+    (350,50),
+    (350,350),
+    (50,350),
+    (50,50),
+]
+
+#the cycle() function will let us cycle through the posistion
+block_positions = itertools.cycle(BLOCK_POSITIONS)
+
+block= Actor("block",center=(50,50))
+ship= Actor("ship",center=(200,200))
+
+def draw():
+    screen.clear()
+    block.draw()
+    ship.draw()
+
+#block movement
+#__________
+
+def move_block():
+    animate(
+        block,
+        "bounce_end",
+        duration=1,
+        pos=next(block_positions)
+    )
+
+move_block() #start
+clock.schedule_interval(move_block,2) #schedule moves
+
+def next_ship_target():
+    #pick a new target for the ship roate face it towards the target
+    x = random.randint(100,300)
+    y = random.randint(100,300)
+    ship.target= x,y
+
+    target_angle = ship.angle_to(ship.target)
+    target_angle += 360*((ship.angle-target_angle+180)//360)
+
+    animate(
+        ship,
+        angle=target_angle,
+        duration=0.3,
+        on_finished=move_ship()
+    )
+
+def move_ship():
+    #move ship to target
+    anim = animate(
+        ship,
+        tween="accel_decel",
+        pos=ship.target,
+        duration = ship.distance_to(ship.target)/200,
+        on_finished = next_ship_target
+    )
+
+next_ship_target()
+pgzrun.go()
